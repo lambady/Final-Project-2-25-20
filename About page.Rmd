@@ -1,0 +1,53 @@
+---
+title: "About Page"
+author: "Leena Ambady"
+date: "2/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+dir.create("raw-data")
+library(readr)
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(readxl)
+library(tidycensus)
+census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
+```
+
+Url to Repository: https://github.com/lambady/Final-Project-2-25-20.git 
+
+```{r Reading in data}
+new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
+  clean_names()
+
+hrsa <- read.csv("raw-data/ORG_OTC_FCT_DET.csv") %>%
+  clean_names
+
+OPO <- read.csv("raw-data/Organ_Procurement_Organizations__Eye_Banks_and_Tissue_Banks_Information.csv")
+
+
+```
+
+```{r Renaming Some Variables}
+new_york_cleaned <- rename(new_york, 
+                           "2012 Census Population" = x2012_census_population,
+                           "% Eligible Population Enrolled" = x_eligible_population_enrolled, 
+                           "Population 18+ Estimate" = population_18_estimate, 
+                           "Organ Procurement Organization" = opo, 
+                           "Year" = year, "Month" = month, 
+                           "County" = county, 
+                           "Registry Enrollments" = registry_enrollments)
+```
+
+```{r Cleaning Data}
+hrsa_cleaned <- hrsa %>%
+  filter(organ_procurement_organization_state_abbreviation == "NY")
+
+OPO_cleaned <- OPO %>%
+  filter(Type == "Organ Procurement Organizations")
+  
+```
+
