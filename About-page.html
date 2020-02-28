@@ -370,13 +370,8 @@ summary {
 
 
 <p>Url to Repository: <a href="https://github.com/lambady/Final-Project-2-25-20.git" class="uri">https://github.com/lambady/Final-Project-2-25-20.git</a></p>
-<pre class="r"><code>new_york &lt;- read.csv(&quot;raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv&quot;) %&gt;%
-  clean_names()
-
-hrsa &lt;- read.csv(&quot;raw-data/ORG_OTC_FCT_DET.csv&quot;)</code></pre>
-<pre class="r"><code>new_york_cleaned &lt;- rename(new_york, &quot;2012 Census Population&quot; = x2012_census_population, &quot;% Eligible Population Enrolled&quot; = x_eligible_population_enrolled, &quot;Population 18+ Estimate&quot; = population_18_estimate, &quot;Organ Procurement Organization&quot; = opo, &quot;Year&quot; = year, &quot;Month&quot; = month, &quot;County&quot; = county, &quot;Registry Enrollments&quot; = registry_enrollments)</code></pre>
-<pre class="r"><code>hrsa_cleaned &lt;- hrsa %&gt;%
-  filter(Organ.Procurement.Organization.State.Abbreviation == &quot;NY&quot;)</code></pre>
+<p>For my final project, I want to look at rates of organ donation registration in New York. More specifically, I want to see whether organ procurement organizations or demographic factors have an affect on rates of registration. Organ procurement organizations are supposed to encourage registration and donation and education the counties that they serve. I’ve located three good datasets to help me with this. 1. One dataset from healthdata.gov tells me the % of the eligible population in New York who registered to be an organ donor, by county. 2. Another dataset from the New York State government tells me about the different organ procurement organizations and which counties they serve. This has national data, but I’ve filtered it for just New York. 3. The third dataset provides more information about organ procurement agencies, some of which is already covered by Dataset 2. I’m still looking through it to see if there is any more useful information in this dataset.</p>
+<p>So far, I have loaded the datasets and cleaned up some of the data. I am also planning on using demographic data from the Census. I also would like to see whether trust in government is related to organ donation registration rates, but have had trouble finding any datasets that measure this.</p>
 
 
 

@@ -4,9 +4,17 @@ author: "Leena Ambady"
 date: "2/25/2020"
 output: html_document
 ---
+Url to Repository: https://github.com/lambady/Final-Project-2-25-20.git 
+
+For my final project, I want to look at rates of organ donation registration in New York. More specifically, I want to see whether organ procurement organizations or demographic factors have an affect on rates of registration. Organ procurement organizations are supposed to encourage registration and donation and education the counties that they serve. I've located three good datasets to help me with this.
+1. One dataset from healthdata.gov tells me the % of the eligible population in New York who registered to be an organ donor, by county. 
+2. Another dataset from the New York State government tells me about the different organ procurement organizations and which counties they serve. This has national data, but I've filtered it for just New York. 
+3. The third dataset provides more information about organ procurement agencies, some of which is already covered by Dataset 2. I'm still looking through it to see if there is any more useful information in this dataset. 
+
+So far, I have loaded the datasets and cleaned up some of the data. I am also planning on using demographic data from the Census, for which I have defined some variables below. I also would like to see whether trust in government is related to organ donation registration rates, but have had trouble finding any datasets that measure this so will continue to think about this in the next few weeks. My next steps will also include further cleaning and exploring my data.   
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 dir.create("raw-data")
 library(readr)
 library(tidyverse)
@@ -16,8 +24,6 @@ library(readxl)
 library(tidycensus)
 census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
 ```
-
-Url to Repository: https://github.com/lambady/Final-Project-2-25-20.git 
 
 ```{r Reading in data}
 new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
@@ -31,7 +37,7 @@ OPO <- read.csv("raw-data/Organ_Procurement_Organizations__Eye_Banks_and_Tissue_
 
 ```
 
-```{r Renaming Some Variables}
+```{r Cleaning New York Dataset}
 new_york_cleaned <- rename(new_york, 
                            "2012 Census Population" = x2012_census_population,
                            "% Eligible Population Enrolled" = x_eligible_population_enrolled, 
@@ -42,12 +48,24 @@ new_york_cleaned <- rename(new_york,
                            "Registry Enrollments" = registry_enrollments)
 ```
 
-```{r Cleaning Data}
+```{r Cleaning OPO and HRSA Datasets}
 hrsa_cleaned <- hrsa %>%
   filter(organ_procurement_organization_state_abbreviation == "NY")
 
 OPO_cleaned <- OPO %>%
   filter(Type == "Organ Procurement Organizations")
   
+```
+
+```{r Getting Census Information that is of interest}
+load_variables(2015, "acs5")
+
+racevars <- c(White = "B02001_002", 
+              Black = "B02001_003", 
+              Asian = "B02001_005",
+              Hispanic = "B03003_003",
+              Puerto_Rican = "B03001_005",
+              Dominican = "B03001_007")
+
 ```
 
