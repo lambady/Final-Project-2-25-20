@@ -22,20 +22,27 @@ library(janitor)
 library(dplyr)
 library(readxl)
 library(tidycensus)
+library(stringr)
 census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
 ```
 
 ```{r Reading in data}
-# This dataset contains the number of registry enrollments in each county of New York for the years 2008-2015
+# This dataset contains the number of registry enrollments in each county of New
+# York for the years 2008-2015
 
 new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
   clean_names()
 
-# This dataset contains information about the different organ procurement organizations in NY 
+
+# This data set contains information about the address and contact of each organ
+# procurement agency in NY. Not sure if I will use this dataset but it's nice to
+# have for now.
+
 hrsa <- read.csv("raw-data/ORG_OTC_FCT_DET.csv") %>%
   clean_names
 
-# This dataset contains informatino about which organ procurement organization serves each county in NY 
+# This dataset contains informatinon about which organ procurement organization
+# serves each county in NY. 
 
 OPO <- read.csv("raw-data/Organ_Procurement_Organizations__Eye_Banks_and_Tissue_Banks_Information.csv")
 
@@ -65,7 +72,10 @@ OPO_cleaned <- OPO %>%
 ```{r Getting ACS Information that is of interest}
 load_variables(2015, "acs5")
 
-# This code gives me census data from 2015 about the differe ethnic/racial demographics in all the different counties of New York. I hope to join this with the county data that I have collected on rates of organ donor registration in each county of New York. 
+# This code gives me census data from 2015 about the differe ethnic/racial
+# demographics in all the different counties of New York. I hope to join this
+# with the county data that I have collected on rates of organ donor
+# registration in each county of New York.
 
 racevars <- c(White = "B02001_002", 
               Black = "B02001_003", 
@@ -80,6 +90,39 @@ ny_county_data <- get_acs(geography = "county",
                   state = "NY",
                   geometry = TRUE,
                   summary_var = "B02001_001")
+
+```
+
+```{r}
+# One thing I want to do is link the census data for each county to the data
+# about the number of registry enrollments in each county. I can do this by
+# joining the new_york_cleaned and ny_county_data datasets. First, I need to
+# alter the ny_county_data so that it can be joined. Currently the County names
+# in this dataset are formatting like "Allegheny County, New York" whereas in
+# the new_york_cleaned they are just "Allegheny." Below, I created a new column
+# with just the first word so that I can join the datasets.
+
+ny_county_data$County <- word(ny_county_data$NAME, 1)
+
+# Another thing is that the ny_county_data demographic is just from 2015,
+# whereas the registry data was recorded each month from 2008-2015. Right now, I
+# will just filter it for 2015, but eventually I will need to figure out what
+# dates I want to focus on, and if I want to get more demographic data from
+# other ACS years. I am not sure it makes sense to have monthly data, and might
+# just focus on different years.
+
+County_enrollment_demographic_data <- new_york_cleaned %>%
+  filter(Year == "2015") %>%
+  full_join(ny_county_data, by = "County") %>%
+  select(-summary_moe)
+
+# Now I have one dataset with information on the number of enrollment registrations and the demographic data for each county in New York. 
+
+View(
+  new_york_cleaned %>%
+filter(County == "Albany") %>%
+  filter(Year == "2015")
+)
 
 ```
 
