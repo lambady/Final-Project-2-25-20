@@ -364,14 +364,16 @@ summary {
 
 <h1 class="title toc-ignore">About Page</h1>
 <h4 class="author">Leena Ambady</h4>
-<h4 class="date">2/25/2020</h4>
+<h4 class="date">3/7/2020</h4>
 
 </div>
 
 
 <p>Url to Repository: <a href="https://github.com/lambady/Final-Project-2-25-20.git" class="uri">https://github.com/lambady/Final-Project-2-25-20.git</a></p>
-<p>For my final project, I want to look at rates of organ donation registration in New York. More specifically, I want to see whether organ procurement organizations or demographic factors have an affect on rates of registration. Organ procurement organizations are supposed to encourage registration and donation and education the counties that they serve. I’ve located three good datasets to help me with this. 1. One dataset from healthdata.gov tells me the % of the eligible population in New York who registered to be an organ donor, by county. 2. Another dataset from the New York State government tells me about the different organ procurement organizations and which counties they serve. This has national data, but I’ve filtered it for just New York. 3. The third dataset provides more information about organ procurement agencies, some of which is already covered by Dataset 2. I’m still looking through it to see if there is any more useful information in this dataset.</p>
-<p>So far, I have loaded the datasets and cleaned up some of the data. I am also planning on using demographic data from the Census. I also would like to see whether trust in government is related to organ donation registration rates, but have had trouble finding any datasets that measure this.</p>
+<p>For my final project, I want to look at rates of organ donation registration in New York. More specifically, I want to see whether organ procurement organizations or demographic factors have an affect on rates of registration. Organ procurement organizations are supposed to encourage registration and donation and education the counties that they serve.</p>
+<p>This week, I was able to make progress on getting and cleaning some of the demographic data I’m interested in using. I got data from the 2015 American Communities Survey. I was able to get county level racial/ethnic data for New York. I then joined this data with an existing dataset I had that gave organ donation registration enrollments for each county in New York. This data was collected on a monthly basis from the years 2008-2015. Obviously, there are quite a lot of observations then. Something I need to figure out is how to reconcile this registration data was collected very frequently with he demographic data that was collected once every few years. For this week, I just focused on joining the data for the year 2015, since I had ACS data for that.</p>
+<pre><code>## Warning: Column `County` joining factor and character vector, coercing into
+## character vector</code></pre>
 
 
 
