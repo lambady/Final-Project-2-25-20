@@ -26,11 +26,16 @@ census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
 ```
 
 ```{r Reading in data}
+# This dataset contains the number of registry enrollments in each county of New York for the years 2008-2015
+
 new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
   clean_names()
 
+# This dataset contains information about the different organ procurement organizations in NY 
 hrsa <- read.csv("raw-data/ORG_OTC_FCT_DET.csv") %>%
   clean_names
+
+# This dataset contains informatino about which organ procurement organization serves each county in NY 
 
 OPO <- read.csv("raw-data/Organ_Procurement_Organizations__Eye_Banks_and_Tissue_Banks_Information.csv")
 
@@ -57,8 +62,10 @@ OPO_cleaned <- OPO %>%
   
 ```
 
-```{r Getting Census Information that is of interest}
+```{r Getting ACS Information that is of interest}
 load_variables(2015, "acs5")
+
+# This code gives me census data from 2015 about the differe ethnic/racial demographics in all the different counties of New York. I hope to join this with the county data that I have collected on rates of organ donor registration in each county of New York. 
 
 racevars <- c(White = "B02001_002", 
               Black = "B02001_003", 
@@ -66,6 +73,13 @@ racevars <- c(White = "B02001_002",
               Hispanic = "B03003_003",
               Puerto_Rican = "B03001_005",
               Dominican = "B03001_007")
+
+ny_county_data <- get_acs(geography = "county",
+                  variables = racevars, 
+                  year = 2015,
+                  state = "NY",
+                  geometry = TRUE,
+                  summary_var = "B02001_001")
 
 ```
 
