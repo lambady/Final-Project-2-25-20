@@ -99,7 +99,9 @@ ny_county_data <- get_acs(geography = "county",
 # the new_york_cleaned they are just "Allegheny." Below, I created a new column
 # with just the first word so that I can join the datasets.
 
-ny_county_data$County <- word(ny_county_data$NAME, 1)
+ny_county_data$County <- word(ny_county_data$NAME, 1) 
+ny_county_data_final <- ny_county_data %>%
+  mutate(County = recode(County, New = "New York", "St." = "St Lawrence")) 
 
 # Another thing is that the ny_county_data demographic is just from 2015,
 # whereas the registry data was recorded each month from 2008-2015. Right now, I
@@ -110,10 +112,34 @@ ny_county_data$County <- word(ny_county_data$NAME, 1)
 
 County_enrollment_demographic_data <- new_york_cleaned %>%
   filter(Year == "2015") %>%
-  full_join(ny_county_data, by = "County") %>%
-  select(-summary_moe)
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+  mutate(County = recode(County, Cattauragus = "Cattaraugus")) %>%
+  full_join(ny_county_data_final, by = "County") %>%
+  select(-summary_moe) 
 
 # Now I have one dataset with information on the number of enrollment registrations and the demographic data for each county in New York. 
+```
 
+```{r}
+Simplified_Joined <- County_enrollment_demographic_data %>%
+  select(-"Organ Procurement Organization", 
+         -"location", -"chart_month", -"GEOID", 
+         -"NAME", -"geometry") %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
+  
+  # I made it so only the demographics on white are shown, I could probably do
+  # this separately for every race I indicated
+  
+  filter(variable == "White") %>%
+  mutate(Prop_White = (estimate/summary_est))
+
+
+Simplified_Joined %>%
+  ggplot(aes(x = Pop_Enrolled, 
+             y = fct_reorder(County, Pop_Enrolled), 
+             color = Prop_White)) + 
+  geom_point()
 ```
 
