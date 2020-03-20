@@ -1,0 +1,125 @@
+---
+title: "MS 5"
+author: "Leena Ambady"
+date: "3/20/2020"
+output: html_document
+---
+Here, I made a plot looking at the rates of organ donation registration by County in New York. I also wanted to look at rates by racial demographic of the county, as I suspect that there might be barriers of government mistrust/healthcare access that might prevent minorities from registering as organ donors. I made a plot that shows the proportion of the population that is white, based on ACS data from 2015. I also plan to make similar plots that show the proportion of the population that is Asian, Hispanic, etc to show other effects. I also want to compare organ donation rates with the average age in these counties, as well as the average income level. I also hope to look at levels of government mistrust, if I can find a measure of this. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+dir.create("raw-data")
+library(readr)
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(readxl)
+library(tidycensus)
+library(stringr)
+census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
+```
+
+```{r Reading and Loading Data, include = FALSE}
+new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
+  clean_names()
+
+new_york_cleaned <- rename(new_york, 
+                           "2012 Census Population" = x2012_census_population,
+                           "% Eligible Population Enrolled" = x_eligible_population_enrolled, 
+                           "Population 18+ Estimate" = population_18_estimate, 
+                           "Organ Procurement Organization" = opo, 
+                           "Year" = year, "Month" = month, 
+                           "County" = county, 
+                           "Registry Enrollments" = registry_enrollments)
+```
+
+```{r Cleaning and Joining Data, include=FALSE}
+load_variables(2015, "acs5")
+
+# This code gives me census data from 2015 about the differe ethnic/racial
+# demographics in all the different counties of New York. I hope to join this
+# with the county data that I have collected on rates of organ donor
+# registration in each county of New York.
+
+racevars <- c(White = "B02001_002", 
+              Black = "B02001_003", 
+              Asian = "B02001_005",
+              Hispanic = "B03003_003",
+              Puerto_Rican = "B03001_005",
+              Dominican = "B03001_007")
+
+ny_county_data <- get_acs(geography = "county",
+                  variables = racevars, 
+                  year = 2015,
+                  state = "NY",
+                  geometry = TRUE,
+                  summary_var = "B02001_001")
+
+# One thing I want to do is link the census data for each county to the data
+# about the number of registry enrollments in each county. I can do this by
+# joining the new_york_cleaned and ny_county_data datasets. First, I need to
+# alter the ny_county_data so that it can be joined. Currently the County names
+# in this dataset are formatting like "Allegheny County, New York" whereas in
+# the new_york_cleaned they are just "Allegheny." Below, I created a new column
+# with just the first word so that I can join the datasets.
+
+ny_county_data$County <- word(ny_county_data$NAME, 1) 
+ny_county_data_final <- ny_county_data %>%
+  mutate(County = recode(County, New = "New York", "St." = "St Lawrence")) 
+
+# Another thing is that the ny_county_data demographic is just from 2015,
+# whereas the registry data was recorded each month from 2008-2015. Right now, I
+# will just filter it for 2015, but eventually I will need to figure out what
+# dates I want to focus on, and if I want to get more demographic data from
+# other ACS years. I am not sure it makes sense to have monthly data, and might
+# just focus on different years.
+
+County_enrollment_demographic_data <- new_york_cleaned %>%
+  filter(Year == "2015") %>%
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+  mutate(County = recode(County, Cattauragus = "Cattaraugus")) %>%
+  full_join(ny_county_data_final, by = "County") %>%
+  select(-summary_moe) 
+
+# I get a warning that County joins a character and factor objects, and coerces
+# the factor into a character, but I think that should be okay.
+
+# Now I have one dataset with information on the number of enrollment
+# registrations and the demographic data for each county in New York.
+```
+
+```{r Creating a Plot}
+Simplified_Joined <- County_enrollment_demographic_data %>%
+  select(-"Organ Procurement Organization", 
+         -"location", -"chart_month", -"GEOID", 
+         -"NAME", -"geometry") %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") 
+  
+  # I made it so only the demographics on white are shown, I could probably do
+  # this separately for every race I indicated
+  
+ White_Plot <- Simplified_Joined %>%
+   filter(variable == "White") %>%
+  mutate(Prop_White = (estimate/summary_est))
+
+
+White_Plot %>%
+#  filter(Month == "11") %>% If I want to have the data just for one month 
+  ggplot(aes(x = Pop_Enrolled, 
+             y = fct_reorder(County, Pop_Enrolled), 
+             color = Prop_White)) + 
+  geom_point(alpha = 0.7) +
+  theme(axis.text.y = element_text(size = 5.5)) +
+    scale_colour_gradient(low = "yellow", high = "red") + 
+  labs(x = "% of Population Registered as an Organ Donor", 
+       y = "County",
+       title = "New York Organ Donation Registration Rates by County in 2015",
+       subtitle = "Registration Rates Measured Monthly",
+       color = "Proportion of Population that is White", 
+       caption = "Sources: American Communities Survey 2015 
+       and New York State's health.data.ny.gov") 
+  
+```
+
