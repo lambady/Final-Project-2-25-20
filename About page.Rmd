@@ -150,6 +150,8 @@ White_Plot %>%
        title = "New York Organ Donation Registration Rates by County in 2015",
        subtitle = "Registration Rates Measured Monthly",
        color = "Proportion of Population that is White") 
+
+ggsave("MS6/prop_white.png")
   
 ```
 
@@ -165,11 +167,14 @@ Black_Plot %>%
              color = Prop_Black)) + 
   geom_point(alpha = 0.7) +
   theme(axis.text.y = element_text(size = 5.5)) +
+  scale_colour_gradient(low = "yellow", high = "red") + 
   labs(x = "% of Population Registered as an Organ Donor", 
        y = "County",
        title = "New York Organ Donation Registration Rates by County in 2015",
        subtitle = "Registration Rates Measured Monthly",
        color = "Proportion of Population that is Black") 
+
+ggsave("MS6/prop_black.png")
 ```
 
 ```{r}
@@ -203,10 +208,13 @@ Asian_Plot %>%
              color = Prop_Asian)) + 
   geom_point(alpha = 0.7) +
   theme(axis.text.y = element_text(size = 5.5)) +
+  scale_colour_gradient(low = "yellow", high = "red") + 
   labs(x = "% of Population Registered as an Organ Donor", 
        y = "County",
        title = "New York Organ Donation Registration Rates by County in 2015",
        subtitle = "Registration Rates Measured Monthly",
        color = "Proportion of Population that is Asian") 
+
+ggsave("MS6/prop_asian.png")
 ```
 
