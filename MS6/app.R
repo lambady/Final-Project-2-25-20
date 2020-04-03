@@ -44,6 +44,12 @@ ui <- navbarPage(
 server <- function(input, output) {
     output$Image <- renderImage({
         
+        # needed to load this library or an error comes up in shiny
+        
+        library(dplyr)
+        
+        # This has my three graphs 
+        
         file <- case_when(input$plot_type == "a" ~ file.path("prop_white.png"),
         
         input$plot_type == "b" ~ file.path("prop_black.png"),
@@ -57,7 +63,7 @@ server <- function(input, output) {
         list(src = file,
              contentType = 'image/png',
              width = 800,
-             height = 650,
+             height = 550,
              alt = "This is alternate text")
         
     }, deleteFile = FALSE)
