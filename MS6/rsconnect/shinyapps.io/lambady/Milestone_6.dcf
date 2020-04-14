@@ -1,0 +1,12 @@
+name: Milestone_6
+title: Milestone_6
+username:
+account: lambady
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2048295
+bundleId: 2962424
+url: https://lambady.shinyapps.io/Milestone_6/
+when: 1585882050.38429
+asMultiple: FALSE
+asStatic: FALSE

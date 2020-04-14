@@ -1,0 +1,19 @@
+---
+title: "Trust Data"
+author: "Leena Ambady"
+date: "4/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(haven)
+library(readr)
+library(tidyverse)
+```
+
+```{r}
+trust <- read_sav("raw-data/W17_May16/ATP W17.sav")
+confidence <- read_sav("raw-data/W9_Nov14/ATP W9.sav")
+```
+
