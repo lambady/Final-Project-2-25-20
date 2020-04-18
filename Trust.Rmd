@@ -13,7 +13,20 @@ library(tidyverse)
 ```
 
 ```{r}
-trust <- read_sav("raw-data/W17_May16/ATP W17.sav")
-confidence <- read_sav("raw-data/W9_Nov14/ATP W9.sav")
+trust <- read_sav("raw-data/W17_May16/ATP W17.sav") %>%
+  as_factor("label")
+```
+
+```{r}
+trust2 <- trust %>%
+  filter(FORM_W17 == "FORM 1") %>%
+  select("FORM_W17", "QKEY", "CONFD1_W17", "LOCALB_W17", "BIO18_W17", "F_AGECAT_FINAL", "F_INCOME_RECODE_FINAL", "F_RACECMB_RECRUITMENT")
+
+trust2 %>%
+  ggplot(aes(x = F_RACECMB_RECRUITMENT, y = LOCALB_W17)) + geom_point(alpha = 0.8) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+
+
 ```
 

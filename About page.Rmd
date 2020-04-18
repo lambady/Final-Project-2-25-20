@@ -30,20 +30,6 @@ census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
 new_york <- read.csv("raw-data/Donate_Life_Organ_and_Tissue_Donor_Registry_Enrollment_by_County__Beginning_September_2008.csv") %>%
   clean_names()
 
-
-# This data set contains information about the address and contact of each organ
-# procurement agency in NY. Not sure if I will use this dataset but it's nice to
-# have for now.
-
-hrsa <- read.csv("raw-data/ORG_OTC_FCT_DET.csv") %>%
-  clean_names
-
-# This dataset contains informatinon about which organ procurement organization
-# serves each county in NY. 
-
-OPO <- read.csv("raw-data/Organ_Procurement_Organizations__Eye_Banks_and_Tissue_Banks_Information.csv")
-
-
 ```
 
 ```{r Cleaning New York Dataset}
@@ -57,36 +43,45 @@ new_york_cleaned <- rename(new_york,
                            "Registry Enrollments" = registry_enrollments)
 ```
 
-```{r Cleaning OPO and HRSA Datasets}
-hrsa_cleaned <- hrsa %>%
-  filter(organ_procurement_organization_state_abbreviation == "NY")
-
-OPO_cleaned <- OPO %>%
-  filter(Type == "Organ Procurement Organizations")
-  
-```
-
 ```{r Getting ACS Information that is of interest, include = FALSE}
-load_variables(2015, "acs5")
+#variables <- load_variables(2015, "acs5")
 
 # This code gives me census data from 2015 about the differe ethnic/racial
 # demographics in all the different counties of New York. I hope to join this
 # with the county data that I have collected on rates of organ donor
 # registration in each county of New York.
 
-racevars <- c(White = "B02001_002", 
-              Black = "B02001_003", 
-              Asian = "B02001_005",
-              Hispanic = "B03003_003",
-              Puerto_Rican = "B03001_005",
-              Dominican = "B03001_007")
+# racevars <- c(White = "B02001_002", 
+#               Black = "B02001_003", 
+#               Asian = "B02001_005",
+#               Hispanic = "B03003_003", 
+#               Median_income = "B06011_001",
+#               Median_age = "B01002_001") 
 
-ny_county_data <- get_acs(geography = "county",
-                  variables = racevars, 
+# ny_county_data <- get_acs(geography = "county",
+#                   variables =  c(White = "B02001_002", 
+#               Black = "B02001_003", 
+#               Asian = "B02001_005",
+#               Hispanic = "B03003_003", 
+#               Median_income = "B19013_001",
+#               Median_age = "B01002_001"),
+#                   year = 2015,
+#                   state = "NY",
+#                   geometry = TRUE,
+#                   summary_var = "B02001_001")
+
+ny_income <- get_acs(geography = "county",
+                  variables = c(Median_income = "B19013_001"),
                   year = 2015,
                   state = "NY",
-                  geometry = TRUE,
-                  summary_var = "B02001_001")
+                  geometry = TRUE)
+
+ny_age <- get_acs(geography = "county",
+                  variables = c(Median_income = "B01002_001"),
+                  year = 2015,
+                  state = "NY",
+                  geometry = TRUE)
+
 
 ```
 
@@ -138,7 +133,7 @@ Simplified_Joined <- County_enrollment_demographic_data %>%
 
 
 White_Plot %>%
-#  filter(Month == "11") %>%
+  filter(Month == "11") %>%
   ggplot(aes(x = Pop_Enrolled, 
              y = fct_reorder(County, Pop_Enrolled), 
              color = Prop_White)) + 
@@ -218,3 +213,120 @@ Asian_Plot %>%
 ggsave("MS6/prop_asian.png")
 ```
 
+```{r}
+Simplified_Joined %>%
+   filter(variable == "Median_age") %>%
+  filter(Month == "11") %>%
+  ggplot(aes(x = Pop_Enrolled, 
+             y = fct_reorder(County, Pop_Enrolled), 
+             color = (estimate))) + 
+  geom_point(alpha = 0.7) +
+  theme(axis.text.y = element_text(size = 5.5)) +
+    scale_colour_gradient(low = "yellow", high = "red") + 
+  labs(x = "% of Population Registered as an Organ Donor", 
+       y = "County",
+       title = "New York Organ Donation Registration Rates by County in 2015",
+       subtitle = "Registration Rates Measured Monthly",
+       color = "Proportion of Population that is White") 
+```
+
+```{r}
+Simplified_Joined %>%
+  filter(Month == "11") %>%
+  filter(variable == "Median_age") %>%
+  ggplot(aes(x = estimate, y = Pop_Enrolled, label = County)) +
+  geom_point() +
+  geom_text(vjust = 0.5, nudge_y = 1, size = 2)
+
+# could i get it so when you hover over the point the County name shows up? 
+```
+
+```{r}
+Simplified_Joined %>%
+   filter(Month == "11") %>%
+  filter(variable == "Median_income") %>%
+  ggplot(aes(x = estimate, y = Pop_Enrolled, label = County)) +
+  geom_point() +
+  geom_text(vjust = 0.5, nudge_y = 1, size = 2) 
+
+Simplified_Joined %>%
+filter(variable == "Median_income") %>%
+filter(!is.na(estimate)) %>%
+  summarize(correlation_income = cor(estimate, Pop_Enrolled))
+
+Simplified_Joined %>%
+filter(variable == "Median_age") %>%
+filter(!is.na(estimate)) %>%
+  summarize(correlation_income = cor(estimate, Pop_Enrolled))
+  
+```
+
+```{r}
+County_enrollment_demographic_data %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
+  filter(Month == "11") %>%
+  ggplot(aes(fill = Pop_Enrolled, geometry = geometry)) +
+  geom_sf()
+
+# want to get the county names to show up here
+# I want to figure out a way to make similar maps but for income and age and in some way race...
+```
+
+```{r}
+ny_county_data %>%
+  select(-moe, -summary_moe) %>%
+  pivot_wider(names_from = variable, values_from = estimate)
+```
+
+```{r}
+ny_income$County <- word(ny_income$NAME, 1) 
+ny_income_final <- ny_income %>%
+  mutate(County = recode(County, New = "New York", "St." = "St Lawrence"))
+ 
+ny_income_final %>%
+  ggplot(aes(fill = estimate, geometry = geometry)) +
+  geom_sf()
+  
+  
+```
+
+```{r}
+ny_age$County <- word(ny_income$NAME, 1) 
+ny_age_final <- ny_age %>%
+  mutate(County = recode(County, New = "New York", "St." = "St Lawrence"))
+ 
+ny_age_final %>%
+  ggplot(aes(fill = estimate, geometry = geometry)) +
+  geom_sf()
+  
+```
+
+```{r}
+County_enrollment_demographic_data %>%
+  rename("OPO" = "Organ Procurement Organization") %>%
+  filter(Month == "11") %>%
+  ggplot(aes(fill = OPO, geometry = geometry)) +
+  geom_sf()
+
+```
+
+```{r}
+new_york_cleaned %>%
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+    rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
+  rename("OPO" = "Organ Procurement Organization") %>%
+  group_by(Year, OPO) %>%
+  summarize(avg_registrants = mean(Pop_Enrolled)) %>%
+  ggplot(aes(x = Year, y = avg_registrants, color = OPO)) + geom_line() 
+
+```
+
+Try to get the % increase in each of the counties since 2007 
+
+Then do the regression 
+
+Then organize everything so it is not so messy 
+
+Then figure out race 
