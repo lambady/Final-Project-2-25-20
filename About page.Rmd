@@ -21,6 +21,8 @@ library(readxl)
 library(tidycensus)
 library(stringr)
 census_api_key("41e31e7dc9f4be0cac86dd847ae1e2e19837090b")
+library(broom)
+library(forcats)
 ```
 
 ```{r Reading in data}
@@ -58,17 +60,15 @@ new_york_cleaned <- rename(new_york,
 #               Median_income = "B06011_001",
 #               Median_age = "B01002_001") 
 
-# ny_county_data <- get_acs(geography = "county",
-#                   variables =  c(White = "B02001_002", 
-#               Black = "B02001_003", 
-#               Asian = "B02001_005",
-#               Hispanic = "B03003_003", 
-#               Median_income = "B19013_001",
-#               Median_age = "B01002_001"),
-#                   year = 2015,
-#                   state = "NY",
-#                   geometry = TRUE,
-#                   summary_var = "B02001_001")
+ny_county_data <- get_acs(geography = "county",
+                  variables =  c(White = "B02001_002",
+              Black = "B02001_003",
+              Asian = "B02001_005",
+              Hispanic = "B03003_003"),
+                  year = 2015,
+                  state = "NY",
+                  geometry = TRUE,
+                  summary_var = "B02001_001")
 
 ny_income <- get_acs(geography = "county",
                   variables = c(Median_income = "B19013_001"),
@@ -77,7 +77,7 @@ ny_income <- get_acs(geography = "county",
                   geometry = TRUE)
 
 ny_age <- get_acs(geography = "county",
-                  variables = c(Median_income = "B01002_001"),
+                  variables = c(Median_age = "B01002_001"),
                   year = 2015,
                   state = "NY",
                   geometry = TRUE)
@@ -111,8 +111,7 @@ County_enrollment_demographic_data <- new_york_cleaned %>%
   filter(!County == "Unknown") %>%
   filter(!County == "TOTAL NYS") %>%
   mutate(County = recode(County, Cattauragus = "Cattaraugus")) %>%
-  full_join(ny_county_data_final, by = "County") %>%
-  select(-summary_moe) 
+  full_join(ny_county_data_final, by = "County") 
 
 # Now I have one dataset with information on the number of enrollment registrations and the demographic data for each county in New York. 
 ```
@@ -122,21 +121,18 @@ Simplified_Joined <- County_enrollment_demographic_data %>%
   select(-"Organ Procurement Organization", 
          -"location", -"chart_month", -"GEOID", 
          -"NAME", -"geometry") %>%
-  rename("Pop_Enrolled" = "% Eligible Population Enrolled") 
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
+  mutate(prop = estimate/summary_est)
   
-  # I made it so only the demographics on white are shown, I could probably do
-  # this separately for every race I indicated
-  
- White_Plot <- Simplified_Joined %>%
-   filter(variable == "White") %>%
-  mutate(Prop_White = (estimate/summary_est))
 
 
-White_Plot %>%
+Simplified_Joined %>%
   filter(Month == "11") %>%
+  filter(!variable == "White") %>%
   ggplot(aes(x = Pop_Enrolled, 
              y = fct_reorder(County, Pop_Enrolled), 
-             color = Prop_White)) + 
+             color = prop)) + 
+  facet_wrap(~ variable) + 
   geom_point(alpha = 0.7) +
   theme(axis.text.y = element_text(size = 5.5)) +
     scale_colour_gradient(low = "yellow", high = "red") + 
@@ -144,91 +140,12 @@ White_Plot %>%
        y = "County",
        title = "New York Organ Donation Registration Rates by County in 2015",
        subtitle = "Registration Rates Measured Monthly",
-       color = "Proportion of Population that is White") 
+       color = "Percent") 
 
 ggsave("MS6/prop_white.png")
   
 ```
 
-```{r}
-Black_Plot <- Simplified_Joined %>%
- filter(variable == "Black") %>%
-  mutate(Prop_Black = (estimate/summary_est))
-
-
-Black_Plot %>%
-  ggplot(aes(x = Pop_Enrolled, 
-             y = fct_reorder(County, Pop_Enrolled), 
-             color = Prop_Black)) + 
-  geom_point(alpha = 0.7) +
-  theme(axis.text.y = element_text(size = 5.5)) +
-  scale_colour_gradient(low = "yellow", high = "red") + 
-  labs(x = "% of Population Registered as an Organ Donor", 
-       y = "County",
-       title = "New York Organ Donation Registration Rates by County in 2015",
-       subtitle = "Registration Rates Measured Monthly",
-       color = "Proportion of Population that is Black") 
-
-ggsave("MS6/prop_black.png")
-```
-
-```{r}
-Hispanic_Plot <- Simplified_Joined %>%
- filter(variable == "Hispanic") %>%
-  mutate(Prop_Hispanic = (estimate/summary_est))
-
-
-Hispanic_Plot %>%
-  ggplot(aes(x = Pop_Enrolled, 
-             y = fct_reorder(County, Pop_Enrolled), 
-             color = Prop_Hispanic)) + 
-  geom_point(alpha = 0.7) +
-  theme(axis.text.y = element_text(size = 5.5)) +
-  labs(x = "% of Population Registered as an Organ Donor", 
-       y = "County",
-       title = "New York Organ Donation Registration Rates by County in 2015",
-       subtitle = "Registration Rates Measured Monthly",
-       color = "Proportion of Population that is Hispanic") 
-```
-
-```{r}
-Asian_Plot <- Simplified_Joined %>%
- filter(variable == "Asian") %>%
-  mutate(Prop_Asian = (estimate/summary_est))
-
-
-Asian_Plot %>%
-  ggplot(aes(x = Pop_Enrolled, 
-             y = fct_reorder(County, Pop_Enrolled), 
-             color = Prop_Asian)) + 
-  geom_point(alpha = 0.7) +
-  theme(axis.text.y = element_text(size = 5.5)) +
-  scale_colour_gradient(low = "yellow", high = "red") + 
-  labs(x = "% of Population Registered as an Organ Donor", 
-       y = "County",
-       title = "New York Organ Donation Registration Rates by County in 2015",
-       subtitle = "Registration Rates Measured Monthly",
-       color = "Proportion of Population that is Asian") 
-
-ggsave("MS6/prop_asian.png")
-```
-
-```{r}
-Simplified_Joined %>%
-   filter(variable == "Median_age") %>%
-  filter(Month == "11") %>%
-  ggplot(aes(x = Pop_Enrolled, 
-             y = fct_reorder(County, Pop_Enrolled), 
-             color = (estimate))) + 
-  geom_point(alpha = 0.7) +
-  theme(axis.text.y = element_text(size = 5.5)) +
-    scale_colour_gradient(low = "yellow", high = "red") + 
-  labs(x = "% of Population Registered as an Organ Donor", 
-       y = "County",
-       title = "New York Organ Donation Registration Rates by County in 2015",
-       subtitle = "Registration Rates Measured Monthly",
-       color = "Proportion of Population that is White") 
-```
 
 ```{r}
 Simplified_Joined %>%
@@ -261,7 +178,7 @@ filter(!is.na(estimate)) %>%
   
 ```
 
-```{r}
+```{r Registration Rates}
 County_enrollment_demographic_data %>%
   rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
   filter(Month == "11") %>%
@@ -272,13 +189,7 @@ County_enrollment_demographic_data %>%
 # I want to figure out a way to make similar maps but for income and age and in some way race...
 ```
 
-```{r}
-ny_county_data %>%
-  select(-moe, -summary_moe) %>%
-  pivot_wider(names_from = variable, values_from = estimate)
-```
-
-```{r}
+```{r Income}
 ny_income$County <- word(ny_income$NAME, 1) 
 ny_income_final <- ny_income %>%
   mutate(County = recode(County, New = "New York", "St." = "St Lawrence"))
@@ -290,7 +201,7 @@ ny_income_final %>%
   
 ```
 
-```{r}
+```{r Age}
 ny_age$County <- word(ny_income$NAME, 1) 
 ny_age_final <- ny_age %>%
   mutate(County = recode(County, New = "New York", "St." = "St Lawrence"))
@@ -301,7 +212,7 @@ ny_age_final %>%
   
 ```
 
-```{r}
+```{r OPOs}
 County_enrollment_demographic_data %>%
   rename("OPO" = "Organ Procurement Organization") %>%
   filter(Month == "11") %>%
@@ -310,7 +221,7 @@ County_enrollment_demographic_data %>%
 
 ```
 
-```{r}
+```{r Increase in Rates by OPO}
 new_york_cleaned %>%
   filter(!County == "Out of State") %>%
   filter(!County == "Unknown") %>%
@@ -323,10 +234,108 @@ new_york_cleaned %>%
 
 ```
 
-Try to get the % increase in each of the counties since 2007 
 
-Then do the regression 
+```{r}
+new_york_cleaned %>%
+  filter(Month == "1") %>%
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") %>%
+  pivot_wider(names_from = Year, values_from = Pop_Enrolled) %>%
+  View()
 
+# how do i consolidate this ??
+```
+
+How might I get the a map with the change/increase in registrants from 2007 to 2020
+  probably need to do a pivot_wider to make each year a column and then subtract 
+
+```{r Race Map}
+County_enrollment_demographic_data %>%
+  mutate(prop = estimate / summary_est) %>%
+  ggplot(aes(fill = prop, color = prop, geometry = geometry)) +
+  facet_wrap(~ variable) +
+  geom_sf() + 
+  scale_fill_viridis_c(direction = -1) +
+  scale_color_viridis_c(direction = -1)
+
+```
+
+Could do increase faceted by race 
+
+```{r}
+# Was trying to do the increase in registration over time by race, but don't have race data for all counties. 
+# Instead, want to try the increase over time but just make a category for each whether they are majority minority or not 
+
+
+test <- new_york_cleaned %>%
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+  mutate(County = recode(County, Cattauragus = "Cattaraugus")) %>%
+  full_join(ny_county_data_final, by = "County") %>%
+  mutate(percent = (estimate / summary_est) * 100) %>%
+  filter(variable == "White") %>%
+  mutate(binary = ifelse(percent <= 80, "minority", "white")) %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled")
+
+test_all <- new_york_cleaned %>%
+  filter(!County == "Out of State") %>%
+  filter(!County == "Unknown") %>%
+  filter(!County == "TOTAL NYS") %>%
+  mutate(County = recode(County, Cattauragus = "Cattaraugus")) %>%
+  full_join(ny_county_data_final, by = "County") %>%
+  mutate(prop = estimate / summary_est) %>%
+  mutate(binary = ifelse(prop <= 0.8, "minority", "white")) %>%
+  rename("Pop_Enrolled" = "% Eligible Population Enrolled") 
+
+
+```
+
+
+```{r}
+# test %>%
+#   filter(Month == "11") %>%
+#   group_by(Year, binary) %>%
+#   summarize(avg_registrants = mean(Pop_Enrolled)) %>%
+#   ggplot(aes(x = Year, y = avg_registrants, color = binary)) + 
+#   geom_line() 
+
+
+test %>%
+  group_by(binary) %>%
+  summarize(mean = mean(Pop_Enrolled))
+
+ test %>%
+ ggplot(aes(x = Pop_Enrolled)) +
+ geom_histogram() +
+  facet_wrap(~ binary)
+
+
+ model <- lm(Pop_Enrolled ~ binary, data = test)
+ 
+ model %>%
+   tidy(conf.int = TRUE) %>%
+   select(term, estimate, conf.high, conf.low)
+ 
+ model2 <- lm(Pop_Enrolled ~ percent, data = test)
+ 
+ model2 %>%
+    tidy(conf.int = TRUE) %>%
+   select(term, estimate, conf.high, conf.low)
+   
+ test %>%
+   filter(Month == "1") %>%
+   filter(Year == "2015") %>%
+   ggplot(aes(x = percent, y = Pop_Enrolled)) + geom_point() +
+   geom_smooth(method = "lm", se = FALSE)
+ 
+  # is this too skewed by the outliers ?? 
+  
+```
 Then organize everything so it is not so messy 
 
-Then figure out race 
+Need to decide what graphs I want, what maps I want, and display them 
+
+Need to figure out trust
